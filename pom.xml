@@ -1,0 +1,342 @@
+<?xml version="1.0"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.dlmarion</groupId>
+  <artifactId>AccuFunk</artifactId>
+  <version>0.1-SNAPSHOT</version>
+  <packaging>jar</packaging>
+  <properties>
+    <accumulo.version>1.6.1</accumulo.version>
+    <hadoop.version>2.6.0</hadoop.version>
+    <zookeeper.version>3.4.6</zookeeper.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <hadoop.download.url>http://www.gtlib.gatech.edu/pub/apache/hadoop/common/hadoop-${hadoop.version}</hadoop.download.url>
+    <hadoop.download.file>hadoop-${hadoop.version}.tar.gz</hadoop.download.file>
+    <hadoop.tar.file>hadoop-${hadoop.version}.tar</hadoop.tar.file>
+    <accumulo.download.url>http://www.gtlib.gatech.edu/pub/apache/accumulo/${accumulo.version}</accumulo.download.url>
+    <accumulo.download.file>accumulo-${accumulo.version}-bin.tar.gz</accumulo.download.file>
+    <accumulo.tar.file>accumulo-${accumulo.version}-bin.tar</accumulo.tar.file>
+    <zookeeper.download.url>http://www.gtlib.gatech.edu/pub/apache/zookeeper/zookeeper-${zookeeper.version}</zookeeper.download.url>
+    <zookeeper.download.file>zookeeper-${zookeeper.version}.tar.gz</zookeeper.download.file>
+    <zookeeper.tar.file>zookeeper-${zookeeper.version}.tar</zookeeper.tar.file>
+    <integration.test.dir>${project.build.directory}/integration</integration.test.dir>
+    <integration.hadoop.dir>${integration.test.dir}/hadoop</integration.hadoop.dir>
+    <integration.accumulo.dir>${integration.test.dir}/accumulo</integration.accumulo.dir>
+    <integration.zookeeper.dir>${integration.test.dir}/zookeeper</integration.zookeeper.dir>
+    <HADOOP_HOME>${integration.hadoop.dir}/hadoop-${hadoop.version}</HADOOP_HOME>
+    <ACCUMULO_HOME>${integration.accumulo.dir}/accumulo-${accumulo.version}</ACCUMULO_HOME>
+    <ZOOKEEPER_HOME>${integration.zookeeper.dir}/zookeeper-${zookeeper.version}</ZOOKEEPER_HOME>
+    <ZOOKEEPER_CONF_DIR>${ZOOKEEPER_HOME}/conf</ZOOKEEPER_CONF_DIR>
+    <HADOOP_CONF_DIR>${HADOOP_HOME}/etc/hadoop</HADOOP_CONF_DIR>
+    <ACCUMULO_CONF_DIR>${ACCUMULO_HOME}/conf</ACCUMULO_CONF_DIR>
+    <accumulo.password>accufunk</accumulo.password>
+    <accumulo.instance.name>accufunk</accumulo.instance.name>
+  </properties>
+  <profiles>
+    <profile>
+      <id>functional-tests</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <version>2.18.1</version>
+            <executions>
+              <execution>
+                <configuration>
+                  <threadCount>1</threadCount>
+                  <threadCountClasses>0</threadCountClasses>
+                  <threadCountMethods>1</threadCountMethods>
+                  <threadCountSuites>0</threadCountSuites>
+                  <reuseForks>false</reuseForks>
+                  <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                </configuration>
+                <goals>
+                  <goal>integration-test</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+<!--
+    Download ZK, HDFS, and Accumulo tarballs, extract to target/integration directory, configure, and start 
+-->
+      <id>download</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>wagon-maven-plugin</artifactId>
+            <version>1.0</version>
+            <executions>
+              <execution>
+                <id>download-zookeeper</id>
+                <phase>process-test-resources</phase>
+                <goals>
+                  <goal>download-single</goal>
+                </goals>
+                <configuration>
+                  <url>${zookeeper.download.url}</url>
+                  <fromFile>${zookeeper.download.file}</fromFile>
+                  <toDir>${integration.zookeeper.dir}</toDir>
+                </configuration>
+              </execution>
+              <execution>
+                <id>download-hadoop</id>
+                <phase>process-test-resources</phase>
+                <goals>
+                  <goal>download-single</goal>
+                </goals>
+                <configuration>
+                  <url>${hadoop.download.url}</url>
+                  <fromFile>${hadoop.download.file}</fromFile>
+                  <toDir>${integration.hadoop.dir}</toDir>
+                </configuration>
+              </execution>
+              <execution>
+                <id>download-accumulo</id>
+                <phase>process-test-resources</phase>
+                <goals>
+                  <goal>download-single</goal>
+                </goals>
+                <configuration>
+                  <url>${accumulo.download.url}</url>
+                  <fromFile>${accumulo.download.file}</fromFile>
+                  <toDir>${integration.accumulo.dir}</toDir>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>make-integration-dirs</id>
+                <phase>process-test-resources</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <tasks>
+                    <mkdir dir="${integration.hadoop.dir}"/>
+                    <mkdir dir="${integration.accumulo.dir}"/>
+                  </tasks>
+                </configuration>
+              </execution>
+              <execution>
+                <id>untar-artifacts</id>
+                <phase>process-test-resources</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <tasks>
+                    <gunzip src="${integration.hadoop.dir}/${hadoop.download.file}" dest="${integration.hadoop.dir}"/>
+                    <untar src="${integration.hadoop.dir}/${hadoop.tar.file}" dest="${integration.hadoop.dir}"/>
+                    <gunzip src="${integration.accumulo.dir}/${accumulo.download.file}" dest="${integration.accumulo.dir}"/>
+                    <untar src="${integration.accumulo.dir}/${accumulo.tar.file}" dest="${integration.accumulo.dir}"/>
+                    <gunzip src="${integration.zookeeper.dir}/${zookeeper.download.file}" dest="${integration.zookeeper.dir}"/>
+                    <untar src="${integration.zookeeper.dir}/${zookeeper.tar.file}" dest="${integration.zookeeper.dir}"/>
+                  </tasks>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <artifactId>maven-resources-plugin</artifactId>
+            <version>2.7</version>
+            <executions>
+              <execution>
+                <id>copy-zookeeper-resources</id>
+                <phase>process-test-resources</phase>
+                <goals>
+                  <goal>copy-resources</goal>
+                </goals>
+                <configuration>
+                  <outputDirectory>${ZOOKEEPER_CONF_DIR}</outputDirectory>
+                  <resources>
+                    <resource>
+                      <directory>src/test/resources/integration/zookeeper</directory>
+                      <filtering>true</filtering>
+                    </resource>
+                  </resources>
+                </configuration>
+              </execution>
+              <execution>
+                <id>copy-hadoop-resources</id>
+                <phase>process-test-resources</phase>
+                <goals>
+                  <goal>copy-resources</goal>
+                </goals>
+                <configuration>
+                  <outputDirectory>${HADOOP_CONF_DIR}</outputDirectory>
+                  <resources>
+                    <resource>
+                      <directory>src/test/resources/integration/hadoop</directory>
+                      <filtering>true</filtering>
+                    </resource>
+                  </resources>
+                </configuration>
+              </execution>
+              <execution>
+                <id>copy-accumulo-resources</id>
+                <phase>process-test-resources</phase>
+                <goals>
+                  <goal>copy-resources</goal>
+                </goals>
+                <configuration>
+                  <outputDirectory>${ACCUMULO_CONF_DIR}</outputDirectory>
+                  <resources>
+                    <resource>
+                      <directory>src/test/resources/integration/accumulo</directory>
+                      <filtering>true</filtering>
+                    </resource>
+                  </resources>
+                </configuration>
+              </execution>
+              <execution>
+                <id>copy-service-scripts</id>
+                <phase>process-test-resources</phase>
+                <goals>
+                  <goal>copy-resources</goal>
+                </goals>
+                <configuration>
+                  <outputDirectory>${integration.test.dir}/bin</outputDirectory>
+                  <resources>
+                    <resource>
+                      <directory>src/test/resources/integration</directory>
+                      <includes>
+                        <include>*.sh</include>
+                      </includes>
+                      <filtering>true</filtering>
+                    </resource>
+                  </resources>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+<!--
+  Start the running ZK, HDFS, and Accumulo 
+-->
+    <profile>
+      <id>start</id>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>start-services</id>
+                <phase>pre-integration-test</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <tasks>
+                    <chmod dir="${ZOOKEEPER_HOME}/bin/" perm="u+x" includes="*"/>
+                    <chmod dir="${HADOOP_HOME}/bin/" perm="u+x" includes="*"/>
+                    <chmod dir="${ACCUMULO_HOME}/bin/" perm="u+x" includes="*"/>
+                    <chmod dir="${integration.test.dir}/bin/" perm="u+x" includes="*"/>
+                    <exec executable="/bin/rm">
+                      <arg value="-rf"/>
+                      <arg value="${ZOOKEEPER_HOME}/data/"/>
+                    </exec>
+                    <exec executable="/bin/rm">
+                      <arg value="-rf"/>
+                      <arg value="${integration.hadoop.dir}/dfs/"/>
+                    </exec>
+                    <exec executable="${ZOOKEEPER_HOME}/bin/zkServer.sh">
+                      <arg value="start"/>
+                    </exec>
+                    <exec executable="${HADOOP_HOME}/bin/hdfs">
+                      <arg value="namenode"/>
+                      <arg value="-format"/>
+                      <arg value="-clusterid"/>
+                      <arg value="CID-accufunk"/>
+                    </exec>
+                    <exec executable="${HADOOP_HOME}/bin/hdfs" spawn="true">
+                      <arg value="namenode"/>
+                    </exec>
+                    <exec executable="${HADOOP_HOME}/bin/hdfs" spawn="true">
+                      <arg value="datanode"/>
+                    </exec>
+                    <exec executable="/bin/echo">
+                      <arg value="Sleeping for 60s while Hadoop starts"/>
+                    </exec>
+                    <exec executable="/bin/sleep">
+                      <arg value="60"/>
+                    </exec>
+                    <exec executable="${ACCUMULO_HOME}/bin/accumulo">
+                      <arg value="init"/>
+                      <arg value="--instance-name"/>
+                      <arg value="${accumulo.instance.name}"/>
+                      <arg value="--password"/>
+                      <arg value="${accumulo.password}"/>
+                    </exec>
+                    <exec executable="${ACCUMULO_HOME}/bin/accumulo" spawn="true">
+                      <arg value="tserver"/>
+                      <arg value="--address"/>
+                      <arg value="localhost"/>
+                    </exec>
+                    <exec executable="${ACCUMULO_HOME}/bin/accumulo" spawn="true">
+                      <arg value="master"/>
+                      <arg value="--address"/>
+                      <arg value="localhost"/>
+                    </exec>
+                    <!-- Print out processes to confirm they are running -->
+                    <exec executable="/usr/bin/pgrep">
+                      <arg value="-af"/>
+                      <arg value="zoo"/>
+                    </exec>
+                    <exec executable="/usr/bin/pgrep">
+                      <arg value="-af"/>
+                      <arg value="hdfs"/>
+                    </exec>
+                    <exec executable="/usr/bin/pgrep">
+                      <arg value="-af"/>
+                      <arg value="accumulo"/>
+                    </exec>
+                  </tasks>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+<!--
+  Shutdown the running ZK, HDFS, and Accumulo 
+-->
+    <profile>
+      <id>stop</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>1.3.2</version>
+            <executions>
+              <execution>
+                <id>stop-services</id>
+                <phase>post-integration-test</phase>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <configuration>
+                  <executable>${integration.test.dir}/bin/stop-services.sh</executable>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+</project>
