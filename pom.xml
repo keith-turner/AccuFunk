@@ -11,13 +11,14 @@
     <zookeeper.version>3.4.6</zookeeper.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <hadoop.download.url>http://www.gtlib.gatech.edu/pub/apache/hadoop/common/hadoop-${hadoop.version}</hadoop.download.url>
+    <apache.mirror>http://www.gtlib.gatech.edu/pub/apache</apache.mirror>
+    <hadoop.download.url>${apache.mirror}/hadoop/common/hadoop-${hadoop.version}</hadoop.download.url>
     <hadoop.download.file>hadoop-${hadoop.version}.tar.gz</hadoop.download.file>
     <hadoop.tar.file>hadoop-${hadoop.version}.tar</hadoop.tar.file>
-    <accumulo.download.url>http://www.gtlib.gatech.edu/pub/apache/accumulo/${accumulo.version}</accumulo.download.url>
+    <accumulo.download.url>${apache.mirror}/accumulo/${accumulo.version}</accumulo.download.url>
     <accumulo.download.file>accumulo-${accumulo.version}-bin.tar.gz</accumulo.download.file>
     <accumulo.tar.file>accumulo-${accumulo.version}-bin.tar</accumulo.tar.file>
-    <zookeeper.download.url>http://www.gtlib.gatech.edu/pub/apache/zookeeper/zookeeper-${zookeeper.version}</zookeeper.download.url>
+    <zookeeper.download.url>${apache.mirror}/zookeeper/zookeeper-${zookeeper.version}</zookeeper.download.url>
     <zookeeper.download.file>zookeeper-${zookeeper.version}.tar.gz</zookeeper.download.file>
     <zookeeper.tar.file>zookeeper-${zookeeper.version}.tar</zookeeper.tar.file>
     <integration.test.dir>${project.build.directory}/integration</integration.test.dir>
